@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Truth or Dare Elite</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0b">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <style>
+        :root {
+            --bg: #0a0a0b;
+            --card: #151517;
+            --card-border: #242426;
+            --primary: #ffffff;
+            --secondary: #8e8e93;
+            --truth-accent: #3a86ff;
+            --dare-accent: #8338ec;
+            --start-accent: #e0e0e0;
+            --danger: #ff453a;
+            --male: #3a86ff;
+            --female: #ff006e;
+            --success: #30d158;
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        body {
+            
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: black;
+            color: var(--primary);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            touch-action: none;
+            letter-spacing: -0.02em;
+        }
+
+        header { 
+            padding-top: calc(var(--safe-top) + 20px); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            position: relative;
+            flex-shrink: 0;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        h1 { 
+            font-size: 16px; 
+            font-weight: 300; 
+            letter-spacing: 0.4em; 
+            margin: 0; 
+            padding: 15px; 
+            text-transform: uppercase; 
+            opacity: 0.8; 
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        h1:active {
+            transform: scale(0.95);
+        }
+        
+        .admin-active h1 { 
+            color: var(--truth-accent); 
+            opacity: 1; 
+            text-shadow: 0 0 20px rgba(58, 134, 255, 0.5);
+        }
+
+        .settings-btn {
+            position: absolute;
+            right: 20px;
+            font-size: 20px;
+            opacity: 0.6;
+            cursor: pointer;
+            padding: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+        }
+        
+        .settings-btn:active {
+            transform: scale(0.9);
+            opacity: 1;
+            background: rgba(255,255,255,0.05);
+        }
+
+        main { 
+            flex-grow: 1; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 20px; 
+            overflow: hidden; 
+            padding-bottom: calc(var(--safe-bottom) + 20px);
+            width: 100%;
+        }
+        
+        .screen { 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            justify-content: space-between; 
+            width: 100%;
+            animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .glass-card { 
+            background: linear-gradient(135deg, rgba(21, 21, 23, 0.8) 0%, rgba(21, 21, 23, 0.6) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px; 
+            padding: 30px; 
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        .task-display { 
+            flex-grow: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center; 
+            font-size: 26px; 
+            font-weight: 500; 
+            line-height: 1.35; 
+            margin: 20px 0;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none;
+            cursor: grab;
+            position: relative;
+        }
+        
+        .task-display:active {
+            cursor: grabbing;
+        }
+        
+        .task-display::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 32px;
+            padding: 2px;
+            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .task-display.active::before {
+            opacity: 1;
+        }
+        
+        .swipe-left { 
+            transform: translateX(-150%) rotate(-20deg) scale(0.8); 
+            opacity: 0; 
+        }
+        
+        .swipe-right { 
+            transform: translateX(150%) rotate(20deg) scale(0.8); 
+            opacity: 0; 
+        }
+
+        .instruction-hint {
+            font-size: 11px; 
+            color: var(--secondary); 
+            text-align: center;
+            text-transform: uppercase; 
+            letter-spacing: 0.15em; 
+            margin-bottom: 5px;
+            transition: all 0.3s ease;
+        }
+
+        input, textarea, select { 
+            width: 100%; 
+            background: rgba(28, 28, 30, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05); 
+            color: white; 
+            padding: 20px; 
+            border-radius: 20px; 
+            font-size: 16px; 
+            margin-bottom: 15px; 
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: rgba(255,255,255,0.15);
+            background: rgba(28, 28, 30, 0.8);
+            box-shadow: 0 0 0 4px rgba(255,255,255,0.03);
+        }
+
+        .btn { 
+            color: black; 
+            border: none; 
+            padding: 22px; 
+            border-radius: 22px; 
+            font-size: 17px; 
+            font-weight: 600; 
+            width: 100%; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn:active { 
+            transform: scale(0.96); 
+        }
+        
+        .btn-start { 
+            background: linear-gradient(135deg, var(--start-accent) 0%, #ffffff 100%);
+            color: black; 
+            margin-bottom: 0;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.1);
+        }
+        
+        .btn-secondary { 
+            background: rgba(28, 28, 30, 0.6);
+            backdrop-filter: blur(10px);
+            color: white; 
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .btn-next { 
+            background: linear-gradient(135deg, var(--primary) 0%, #e0e0e0 100%);
+            color: #000; 
+            opacity: 0; 
+            transform: translateY(20px); 
+            pointer-events: none; 
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 15px 40px rgba(255,255,255,0.15);
+        }
+        
+        .btn-next.visible { 
+            opacity: 1; 
+            transform: translateY(0); 
+            pointer-events: auto; 
+        }
+
+        .btn-danger { 
+            background: rgba(255, 69, 58, 0.15); 
+            color: #ff453a; 
+            font-size: 12px; 
+            padding: 8px 12px; 
+            border: none; 
+            border-radius: 12px;
+        }
+        
+        .btn-ghost { 
+            background: transparent; 
+            color: var(--secondary); 
+            font-size: 14px; 
+            border: none; 
+            margin-top: 10px;
+        }
+
+        .player-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; 
+            margin-top: 25px; 
+            max-height: 35vh; 
+            overflow-y: auto; 
+            overflow-x: hidden; 
+            padding: 5px;
+            scroll-behavior: smooth;
+        }
+        
+        .player-grid::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .player-grid::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .player-grid::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .chip { 
+            background: rgba(21, 21, 23, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 18px; 
+            border-radius: 22px; 
+            text-align: center; 
+            border: 1px solid rgba(255,255,255,0.05);
+            font-size: 15px; 
+            color: var(--primary);
+            position: relative;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        
+        .chip.male { 
+            border-bottom: 4px solid var(--male);
+            box-shadow: 0 5px 20px rgba(58, 134, 255, 0.15);
+        }
+        
+        .chip.female { 
+            border-bottom: 4px solid var(--female);
+            box-shadow: 0 5px 20px rgba(255, 0, 110, 0.15);
+        }
+
+        .chip.holding {
+            transform: scale(0.92);
+            background: linear-gradient(135deg, rgba(255, 69, 58, 0.3), rgba(255, 69, 58, 0.2));
+            border-color: var(--danger);
+            box-shadow: 0 0 30px rgba(255, 69, 58, 0.5);
+        }
+
+        .admin-active .chip.assigned { 
+            border-color: var(--truth-accent); 
+            background: rgba(58, 134, 255, 0.08);
+            box-shadow: 0 5px 25px rgba(58, 134, 255, 0.3);
+        }
+
+        .add-player-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, #e0e0e0 100%);
+            border: none;
+            font-size: 28px;
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(255,255,255,0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: fixed;
+            bottom: calc(var(--safe-bottom) + 100px);
+            right: 30px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .add-player-btn:active {
+            transform: scale(0.9) rotate(90deg);
+        }
+        
+        .add-player-btn.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0) rotate(180deg);
+        }
+
+        /* Mini Popup for adding players */
+        .mini-popup {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, rgba(15, 15, 16, 0.95) 0%, rgba(21, 21, 23, 0.95) 100%);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: 40px 40px 0 0;
+            padding: 30px;
+            padding-bottom: calc(var(--safe-bottom) + 30px);
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 1500;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 -20px 60px rgba(0,0,0,0.8);
+        }
+        
+        .mini-popup.open {
+            transform: translateY(0);
+        }
+        
+        .mini-popup-handle {
+            width: 40px;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            margin: 0 auto 25px;
+        }
+
+        /* Admin & Settings Layers */
+        #admin-layer, #settings-layer { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            background: linear-gradient(135deg, rgba(15, 15, 16, 0.95) 0%, rgba(21, 21, 23, 0.95) 100%);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: 40px 40px 0 0; 
+            padding: 35px; 
+            padding-bottom: calc(var(--safe-bottom) + 30px); 
+            transform: translateY(100%); 
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            z-index: 1000; 
+            border-top: 1px solid rgba(255,255,255,0.1);
+            max-height: 90vh; 
+            overflow-y: auto;
+            box-shadow: 0 -20px 60px rgba(0,0,0,0.8);
+        }
+        
+        #admin-layer.open, #settings-layer.open { 
+            transform: translateY(0); 
+        }
+
+        .prof-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: rgba(28, 28, 30, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 12px 18px; 
+            border-radius: 18px; 
+            margin-bottom: 10px; 
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .prof-item:active {
+            background: rgba(28, 28, 30, 0.8);
+            transform: scale(0.98);
+        }
+
+        /* Category Grid */
+        .category-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .cat-tile {
+            background: rgba(21, 21, 23, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 25px 15px;
+            border-radius: 24px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--secondary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cat-tile::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .cat-tile:active::before {
+            opacity: 1;
+        }
+        
+        .cat-tile.active {
+            background: linear-gradient(135deg, var(--primary) 0%, #e0e0e0 100%);
+            color: black;
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(255,255,255,0.25);
+            transform: scale(1.02);
+        }
+
+        /* Gender Toggle */
+        .gender-select {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .gender-opt {
+            flex: 1;
+            padding: 15px;
+            border-radius: 18px;
+            background: rgba(21, 21, 23, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            text-align: center;
+            font-size: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        
+        .gender-opt:active {
+            transform: scale(0.95);
+        }
+        
+        .gender-opt.active.m { 
+            background: linear-gradient(135deg, var(--male) 0%, #5a9eff 100%);
+            color: white; 
+            border-color: var(--male);
+            box-shadow: 0 10px 25px rgba(58, 134, 255, 0.3);
+        }
+        
+        .gender-opt.active.f { 
+            background: linear-gradient(135deg, var(--female) 0%, #ff2e8e 100%);
+            color: white; 
+            border-color: var(--female);
+            box-shadow: 0 10px 25px rgba(255, 0, 110, 0.3);
+        }
+
+        .hidden { display: none !important; }
+        
+        #modal-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.85); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            z-index: 2000; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Improved scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.25);
+        }
+    </style>
+</head>
+<body id="body">
+
+<header>
+    <h1 id="main-title">Truth or Dare Elite</h1>
+    <div class="settings-btn" onclick="toggleSettingsPanel()">⚙️</div>
+</header>
+
+<main>
+    <div id="setup-screen" class="screen">
+        <div style="width: 100%;">
+            <div class="player-grid" id="player-list"></div>
+            <p style="font-size: 10px; color: var(--secondary); text-align: center; margin-top: 15px; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.6;">3 Sek. gedrückt halten zum Entfernen</p>
+        </div>
+        <div class="controls" style="margin-bottom: 10px; width: 100%;">
+            <button id="admin-toggle-btn" class="btn btn-secondary hidden" onclick="toggleAdminPanel()">PROFILE EDITIEREN</button>
+            <button id="start-btn" class="btn btn-start hidden" onclick="startGame()">SPIEL STARTEN</button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen hidden">
+        <div style="text-align: center;">
+            <span id="gender-indicator" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.2em;">-</span>
+            <h2 id="current-name" style="font-size: 32px; margin: 8px 0 0 0; font-weight: 700;">-</h2>
+        </div>
+        
+        <div id="swipe-container" style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
+            <div class="instruction-hint" id="swipe-hint">← Dare | Truth →</div>
+            <div class="glass-card task-display" id="task-text">Swipe eine Richtung</div>
+        </div>
+
+        <div class="controls">
+            <button id="next-player-btn" class="btn btn-next" onclick="confirmNextTurn()">NÄCHSTER SPIELER</button>
+        </div>
+    </div>
+</main>
+
+<button class="add-player-btn" id="add-btn" onclick="openAddPlayerPopup()">+</button>
+
+<div class="mini-popup" id="add-player-popup">
+    <div class="mini-popup-handle"></div>
+    <h3 style="margin-top: 0; font-weight: 600; text-align: center;">Neuer Spieler</h3>
+    <div class="gender-select">
+        <div id="opt-m" class="gender-opt active m" onclick="setGender('m')">♂</div>
+        <div id="opt-f" class="gender-opt f" onclick="setGender('f')">♀</div>
+    </div>
+    <input type="text" id="p-name" placeholder="Name eingeben..." autocomplete="off">
+    <button class="btn btn-secondary" style="background: linear-gradient(135deg, var(--primary) 0%, #e0e0e0 100%); color: black;" onclick="addPlayer()">Hinzufügen</button>
+    <button class="btn-ghost" style="width: 100%; padding: 15px;" onclick="closeAddPlayerPopup()">Abbrechen</button>
+</div>
+
+<div id="settings-layer">
+    <h3 style="margin-top:0; font-weight: 600;">Kategorien</h3>
+    <p style="color: var(--secondary); font-size: 13px; margin-bottom: 20px;">Wähle die Fragenkataloge für diese Runde:</p>
+    <div class="category-grid">
+        <div id="cat-soft" class="cat-tile active" onclick="toggleCategory('soft')">SOFT</div>
+        <div id="cat-party" class="cat-tile active" onclick="toggleCategory('party')">PARTY</div>
+        <div id="cat-hot" class="cat-tile" onclick="toggleCategory('hot')">HOT</div>
+        <div id="cat-extreme" class="cat-tile" onclick="toggleCategory('extreme')">EXTREM</div>
+    </div>
+    <button class="btn btn-secondary" style="background: linear-gradient(135deg, var(--primary) 0%, #e0e0e0 100%); color: black;" onclick="toggleSettingsPanel()">Übernehmen</button>
+</div>
+
+<div id="admin-layer">
+    <h3 style="margin-top:0; font-weight: 600;">Profile & Content</h3>
+    <div id="profile-list-container" style="margin-bottom: 25px;"></div>
+    
+    <div id="editor-area" style="background: rgba(255,255,255,0.03); padding: 20px; border-radius: 25px; border: 1px dashed rgba(255,255,255,0.1);">
+        <h4 id="editor-title" style="margin: 0 0 15px 0; font-size: 14px;">Neues Profil</h4>
+        <input type="text" id="prof-name" placeholder="Profil Name">
+        <textarea id="prof-truth" placeholder="Wahrheits-Fragen (pro Zeile)" rows="3"></textarea>
+        <textarea id="prof-dare" placeholder="Pflicht-Aufgaben (pro Zeile)" rows="3"></textarea>
+        <div style="display: flex; gap: 10px;">
+            <button id="save-prof-btn" class="btn btn-secondary" style="background: linear-gradient(135deg, var(--primary) 0%, #e0e0e0 100%); color: black; flex: 2;" onclick="saveProfile()">Profil speichern</button>
+            <button id="cancel-edit-btn" class="btn btn-secondary hidden" style="flex: 1;" onclick="resetEditor()">Abbrechen</button>
+        </div>
+    </div>
+    <button class="btn-ghost" style="width:100%; padding: 20px;" onclick="toggleAdminPanel()">Schließen</button>
+</div>
+
+<div id="modal-overlay" class="hidden">
+    <div class="glass-card" style="width:85%; max-width: 400px;">
+        <h3 id="target-player-name" style="margin-top: 0;">Zuweisung</h3>
+        <select id="prof-select"></select>
+        <button class="btn btn-secondary" style="background: linear-gradient(135deg, var(--primary) 0%, #e0e0e0 100%); color: black;" onclick="assign()">Bestätigen</button>
+        <button class="btn-ghost" style="width:100%" onclick="closeModal()">Abbrechen</button>
+    </div>
+</div>
+
+<script>
+    // State management
+    let players = JSON.parse(localStorage.getItem('tod_v9_players') || '[]');
+    let assignments = JSON.parse(localStorage.getItem('tod_v9_assignments') || '{}'); 
+    let profiles = JSON.parse(localStorage.getItem('tod_v9_profiles') || '{}');
+    let activeCategories = JSON.parse(localStorage.getItem('tod_v9_cats') || '["soft", "party"]');
+    
+    let isAdmin = false;
+    let clickCount = 0;
+    let currentPlayerIdx = 0;
+    let targetPlayer = null;
+    let editModeName = null;
+    let touchStartX = 0;
+    let isTaskActive = false;
+    let longPressTimer = null;
+    let selectedGender = 'm';
+
+    const defaultPool = {
+        soft: {
+            truth: {
+                m: ["Was ist dein Lieblingssport?", "Welches Auto hättest du gerne?"],
+                f: ["Was ist dein Traumreiseziel?", "Was magst du an dir am meisten?"],
+                all: ["Dein größtes Vorbild?", "Was war dein schönster Urlaub?"]
+            },
+            dare: {
+                m: ["Mach 10 Liegestütze.", "Erzähle einen Flachwitz."],
+                f: ["Singe kurz dein Lieblingslied.", "Mache ein Kompliment."],
+                all: ["Trinke ein Glas Wasser.", "Tausche Plätze mit links."]
+            }
+        },
+        party: {
+            truth: {
+                m: ["Peinlichster Absturz?", "Wer im Raum kann am meisten trinken?"],
+                f: ["Schlimmstes Date?", "Was ist dein 'Guilty Pleasure'?"],
+                all: ["Dein größtes Geheimnis?", "Hast du schon mal jemanden angelogen?"]
+            },
+            dare: {
+                m: ["Ex dein Getränk.", "Imitiere jemanden im Raum."],
+                f: ["Poste ein hässliches Selfie.", "Lies die letzten 3 Nachrichten vor."],
+                all: ["10 Sek. Tanz ohne Musik.", "Status posten lassen."]
+            }
+        },
+        hot: {
+            truth: {
+                m: ["Worauf achtest du zuerst?", "Verrücktester Kuss?"],
+                f: ["Was ist dein größter Abturner?", "Wo wurdest du am liebsten geküsst?"],
+                all: ["Schon mal ein Blind Date gehabt?", "Was ist dein 'Typ'?"]
+            },
+            dare: {
+                m: ["Oberteil ausziehen (1 Rd).", "Handkuss geben."],
+                f: ["Flüstere links was Heißes.", "Heißes Foto zeigen."],
+                all: ["Nackenmassage (1 Min).", "Kuss auf die Wange."]
+            }
+        },
+        extreme: {
+            truth: {
+                all: ["Größte sexuelle Fantasie?", "Schon mal betrogen?"],
+                m: ["Schon mal erwischt worden?", "Größtes Missgeschick im Bett?"],
+                f: ["Was war dein wildestes Erlebnis?", "Lieblingsstellung?"]
+            },
+            dare: {
+                all: ["Zieh ein Kleidungsstück aus.", "Lass dir einen Kussfleck machen."],
+                m: ["Lass dir eine Backpfeife geben.", "Lapdance für 30 Sek."],
+                f: ["Setz dich auf den Schoß von... (2 Rd).", "Mache ein sexy Video."]
+            }
+        }
+    };
+
+    window.onload = () => {
+        renderPlayers();
+        updateCategoryUI();
+        updateStartButton();
+    };
+
+    document.getElementById('main-title').onclick = () => {
+        if(!document.getElementById('setup-screen').classList.contains('hidden')) {
+            clickCount++;
+            if(clickCount >= 5) {
+                isAdmin = !isAdmin;
+                document.getElementById('body').classList.toggle('admin-active');
+                document.getElementById('admin-toggle-btn').classList.toggle('hidden', !isAdmin);
+                renderPlayers();
+                clickCount = 0;
+            }
+        } else {
+            location.reload();
+        }
+    };
+
+    const taskElement = document.getElementById('task-text');
+    const nextBtn = document.getElementById('next-player-btn');
+    const swipeHint = document.getElementById('swipe-hint');
+
+    taskElement.addEventListener('touchstart', e => { 
+        if (!isTaskActive) {
+            touchStartX = e.changedTouches[0].screenX;
+            taskElement.classList.add('active');
+        }
+    }, {passive: true});
+    
+    taskElement.addEventListener('touchend', e => { 
+        if (!isTaskActive) {
+            handleSwipe(e.changedTouches[0].screenX);
+            taskElement.classList.remove('active');
+        }
+    }, {passive: true});
+
+    function setGender(g) {
+        selectedGender = g;
+        document.getElementById('opt-m').classList.toggle('active', g === 'm');
+        document.getElementById('opt-f').classList.toggle('active', g === 'f');
+    }
+
+    function openAddPlayerPopup() {
+        document.getElementById('add-player-popup').classList.add('open');
+        document.getElementById('p-name').focus();
+    }
+
+    function closeAddPlayerPopup() {
+        document.getElementById('add-player-popup').classList.remove('open');
+        document.getElementById('p-name').value = '';
+    }
+
+    function toggleSettingsPanel() {
+        document.getElementById('settings-layer').classList.toggle('open');
+    }
+
+    function toggleCategory(cat) {
+        if(activeCategories.includes(cat)) {
+            if(activeCategories.length > 1) activeCategories = activeCategories.filter(c => c !== cat);
+        } else {
+            activeCategories.push(cat);
+        }
+        localStorage.setItem('tod_v9_cats', JSON.stringify(activeCategories));
+        updateCategoryUI();
+    }
+
+    function updateCategoryUI() {
+        const cats = ['soft', 'party', 'hot', 'extreme'];
+        cats.forEach(c => {
+            document.getElementById(`cat-${c}`).classList.toggle('active', activeCategories.includes(c));
+        });
+    }
+
+    function handleSwipe(endX) {
+        const diff = endX - touchStartX;
+        if (Math.abs(diff) > 60) {
+            if (diff > 0) { 
+                taskElement.classList.add('swipe-right'); 
+                executeTask('truth'); 
+            }
+            else { 
+                taskElement.classList.add('swipe-left'); 
+                executeTask('dare'); 
+            }
+        }
+    }
+
+    function executeTask(type) {
+        isTaskActive = true;
+        const pObj = players[currentPlayerIdx];
+        const profName = assignments[pObj.name];
+        
+        let pool = [];
+
+        // Add from categories
+        activeCategories.forEach(cat => {
+            const catContent = defaultPool[cat][type];
+            pool = pool.concat(catContent.all);
+            pool = pool.concat(catContent[pObj.gender]);
+        });
+
+        // Chance to use custom profile
+        if(profName && profiles[profName] && profiles[profName][type]?.length > 0) {
+            if(Math.random() < 0.3) pool = profiles[profName][type];
+        }
+
+        const selectedTask = pool[Math.floor(Math.random() * pool.length)];
+        setTimeout(() => {
+            taskElement.classList.remove('swipe-left', 'swipe-right');
+            taskElement.innerText = selectedTask;
+            taskElement.style.borderColor = type === 'truth' ? 'var(--truth-accent)' : 'var(--dare-accent)';
+            swipeHint.style.opacity = "0";
+            nextBtn.classList.add('visible');
+        }, 400);
+    }
+
+    function confirmNextTurn() {
+        currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
+        isTaskActive = false;
+        nextBtn.classList.remove('visible');
+        swipeHint.style.opacity = "1";
+        taskElement.innerText = "Swipe eine Richtung";
+        taskElement.style.borderColor = "rgba(255,255,255,0.05)";
+        updatePlayerDisplay();
+    }
+
+    function addPlayer() {
+        const val = document.getElementById('p-name').value.trim();
+        if(val && !players.find(p => p.name === val)) {
+            players.push({ name: val, gender: selectedGender });
+            saveData();
+            renderPlayers();
+            document.getElementById('p-name').value = "";
+            closeAddPlayerPopup();
+            updateStartButton();
+        }
+    }
+
+    function updateStartButton() {
+        document.getElementById('start-btn').classList.toggle('hidden', players.length === 0);
+        document.getElementById('add-btn').classList.toggle('hidden', players.length === 0 && !document.getElementById('setup-screen').classList.contains('hidden'));
+    }
+
+    function renderPlayers() {
+        const list = document.getElementById('player-list');
+        list.innerHTML = "";
+        
+        if(players.length === 0) {
+            list.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--secondary); padding: 40px 20px;"><div style="font-size: 48px; margin-bottom: 10px;">🎮</div><div>Noch keine Spieler</div><div style="font-size: 12px; margin-top: 5px; opacity: 0.6;">Tippe auf + um zu starten</div></div>';
+            return;
+        }
+        
+        players.forEach((p, idx) => {
+            const div = document.createElement('div');
+            div.className = `chip ${p.gender === 'm' ? 'male' : 'female'} ${assignments[p.name] ? 'assigned' : ''}`;
+            div.innerText = p.name;
+            div.style.animationDelay = `${idx * 0.05}s`;
+
+            div.addEventListener('touchstart', (e) => startLongPress(e, p.name, div), {passive: true});
+            div.addEventListener('touchend', stopLongPress, {passive: true});
+            div.addEventListener('touchmove', stopLongPress, {passive: true});
+            
+            div.onclick = () => { if(isAdmin) { targetPlayer = p.name; openModal(); } };
+            list.appendChild(div);
+        });
+    }
+
+    function startLongPress(e, name, element) {
+        element.classList.add('holding');
+        longPressTimer = setTimeout(() => {
+            element.classList.remove('holding');
+            removePlayer(name);
+        }, 3000);
+    }
+
+    function stopLongPress(e) {
+        clearTimeout(longPressTimer);
+        if(e.currentTarget) e.currentTarget.classList.remove('holding');
+    }
+
+    function removePlayer(name) {
+        players = players.filter(p => p.name !== name);
+        delete assignments[name];
+        saveData();
+        renderPlayers();
+        updateStartButton();
+    }
+
+    function saveData() {
+        localStorage.setItem('tod_v9_players', JSON.stringify(players));
+        localStorage.setItem('tod_v9_assignments', JSON.stringify(assignments));
+    }
+
+    function startGame() {
+        if(players.length < 2) return alert("Bitte mindestens 2 Spieler!");
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        document.getElementById('add-btn').classList.add('hidden');
+        updatePlayerDisplay();
+    }
+
+    function updatePlayerDisplay() {
+        const p = players[currentPlayerIdx];
+        const indicator = document.getElementById('gender-indicator');
+        document.getElementById('current-name').innerText = p.name;
+        indicator.innerText = p.gender === 'm' ? 'Er ist an der Reihe (♂)' : 'Sie ist an der Reihe (♀)';
+        indicator.style.color = p.gender === 'm' ? 'var(--male)' : 'var(--female)';
+    }
+
+    function toggleAdminPanel() { 
+        if(isAdmin) { 
+            resetEditor();
+            renderProfileList(); 
+            document.getElementById('admin-layer').classList.toggle('open'); 
+        }
+    }
+
+    function renderProfileList() {
+        const container = document.getElementById('profile-list-container');
+        container.innerHTML = "";
+        Object.keys(profiles).forEach(k => {
+            const item = document.createElement('div');
+            item.className = 'prof-item';
+            item.innerHTML = `
+                <div style="flex-grow:1" onclick="editProfile('${k}')">
+                    <span>${k}</span>
+                    <small style="display:block; font-size:11px; color:var(--secondary)">${profiles[k].truth.length} W / ${profiles[k].dare.length} P</small>
+                </div>
+                <button class="btn-danger" onclick="deleteProfile('${k}')">Löschen</button>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function editProfile(name) {
+        const p = profiles[name];
+        editModeName = name;
+        document.getElementById('prof-name').value = name;
+        document.getElementById('prof-truth').value = p.truth.join('\n');
+        document.getElementById('prof-dare').value = p.dare.join('\n');
+        document.getElementById('editor-title').innerText = "Profil bearbeiten";
+        document.getElementById('save-prof-btn').innerText = "Aktualisieren";
+        document.getElementById('cancel-edit-btn').classList.remove('hidden');
+    }
+
+    function resetEditor() {
+        editModeName = null;
+        document.getElementById('prof-name').value = "";
+        document.getElementById('prof-truth').value = "";
+        document.getElementById('prof-dare').value = "";
+        document.getElementById('editor-title').innerText = "Neues Profil";
+        document.getElementById('save-prof-btn').innerText = "Profil speichern";
+        document.getElementById('cancel-edit-btn').classList.add('hidden');
+    }
+
+    function saveProfile() {
+        const name = document.getElementById('prof-name').value.trim();
+        const t = document.getElementById('prof-truth').value.split('\n').filter(x => x.trim());
+        const d = document.getElementById('prof-dare').value.split('\n').filter(x => x.trim());
+        if(!name) return;
+        if(editModeName && editModeName !== name) delete profiles[editModeName];
+        profiles[name] = { truth: t, dare: d };
+        localStorage.setItem('tod_v9_profiles', JSON.stringify(profiles));
+        resetEditor();
+        renderProfileList();
+    }
+
+    function deleteProfile(name) {
+        if(confirm(`Profil "${name}" löschen?`)) {
+            delete profiles[name];
+            Object.keys(assignments).forEach(p => { if(assignments[p] === name) delete assignments[p]; });
+            localStorage.setItem('tod_v9_profiles', JSON.stringify(profiles));
+            saveData();
+            renderProfileList();
+            renderPlayers();
+        }
+    }
+
+    function openModal() {
+        document.getElementById('target-player-name').innerText = targetPlayer;
+        const sel = document.getElementById('prof-select');
+        sel.innerHTML = '<option value="">Standard-Pool</option>';
+        Object.keys(profiles).forEach(k => sel.innerHTML += `<option value="${k}">${k}</option>`);
+        sel.value = assignments[targetPlayer] || "";
+        document.getElementById('modal-overlay').classList.remove('hidden');
+    }
+
+    function closeModal() { 
+        document.getElementById('modal-overlay').classList.add('hidden'); 
+    }
+    
+    function assign() {
+        const p = document.getElementById('prof-select').value;
+        p ? (assignments[targetPlayer] = p) : (delete assignments[targetPlayer]);
+        saveData();
+        renderPlayers(); 
+        closeModal();
+    }
+
+    // Handle Enter key in add player input
+    document.getElementById('p-name').addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') addPlayer();
+    });
+
+    document.addEventListener('touchmove', e => { 
+        if(e.target.closest('.player-grid') || 
+           e.target.closest('#admin-layer') || 
+           e.target.closest('#settings-layer') || 
+           e.target.closest('.mini-popup') ||
+           e.target.closest('textarea')) return; 
+        e.preventDefault(); 
+    }, { passive: false });
+</script>
+</body>
+</html>
